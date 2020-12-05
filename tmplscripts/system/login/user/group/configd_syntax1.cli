@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+syntax:expression: !$VAR(@) in "routeadm" , "vyattacfg" , "vyattaop" , "sudo" , "adm" , "operator" ; "Use configuration level to change membership of operator and admin groups"

@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+sub:expression: $VAR(../encrypted-password/@) = `SECRET='$VAR(@)' encrypt_shadow_passwd`

@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2014-2015 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use NetAddr::IP;  # This library is available via libnetaddr-ip-perl.deb
+use XorpConfigParser;
+
+
+use Getopt::Long;
+my $admin;
+my $cfgfile;
+GetOptions("admin=s" => \$admin, "cfgfile=s" => \$cfgfile);
+
+my $xcp = new XorpConfigParser();
+
+my $status = 1;
+if ($admin ne '') {
+	create_admin_account($cfgfile);
+}
+
+my $CFGFILE;
+open (my $CFGFILE, '>', "$cfgfile");
+select $CFGFILE;
+
+$xcp->output(0);
+
+sub create_admin_account {
+	my ($file) = @_;
+	$xcp->parse($file);
+
+	my $login = $xcp->get_node(['system', 'login']);
+	my $loginChildren = $login->{'children'};
+    foreach my $child (@$loginChildren) {
+
+        # admin user to replace in default cfg was vyatta and is now tmpuser
+        if (   $child->{'name'} =~ /user tmpuser/
+            || $child->{'name'} =~ /user vyatta/ )
+        {
+            $child->{'name'} = "user $admin";
+            $status = 0;
+            last;
+        }
+    }
+}
+
+exit $status;

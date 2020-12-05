@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+commit:expression: $VAR(@) in $VAR(/system/login/group/@@) ; "Group '$VAR(@)' does not exist"

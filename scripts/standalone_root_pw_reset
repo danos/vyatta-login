@@ -1,0 +1,187 @@
+#!/bin/bash
+# **** License ****
+#
+# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# All Rights Reserved.
+#
+# Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# This code was originally developed by Vyatta, Inc.
+# Portions created by Vyatta are Copyright (C) 2007 Vyatta, Inc.
+# All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Author:	Bob Gilligan <gilligan@vyatta.com>
+# Description:	Standalone script to set the user passwd to new value.
+#		Note:  This script can ONLY be run as a standalone init program by grub.
+#
+# **** End License ****
+
+# The Vyatta config file:
+CF=/config/config.boot
+
+# How long to wait for user to respond, in seconds
+TIME_TO_WAIT=30
+
+change_password() {
+    local usr=$1
+    local pwd1="1"
+    local pwd2="2"
+    local cmd
+    local opts
+
+    until [ "$pwd1" == "$pwd2" ]
+    do
+        read -p "Enter '$usr' password: " -r -s pwd1
+	echo
+	read -p "Retype '$usr' password: " -r -s pwd2
+	echo
+
+	if [ "$pwd1" != "$pwd2" ]
+	then echo "Passwords do not match"
+	fi
+    done
+
+    local epwd
+    epwd=$(SECRET="$pwd1" /opt/vyatta/bin/encrypt_shadow_passwd)
+    if [[ -z "$(getent passwd "$usr")" ]]; then
+        # Setup the user
+        cmd="useradd"
+        opts="-m -N"
+    else
+        cmd="usermod"
+        opts=""
+    fi
+    $cmd $opts -p "$epwd" "$usr"
+    level="default"
+    if ! /opt/vyatta/sbin/vyatta-change-password --admin="$usr" \
+          --epasswd="$epwd" --default=$level; then
+	echo "Failed to reset password for user '$usr'"
+	display_message
+    fi
+}
+
+# System is so messed up that doing anything would be a mistake
+dead() {
+    echo "$*"
+    echo
+    echo "This tool can only recover missing system user password."
+    echo "It is not a full system restore"
+    echo
+    echo -n "Hit return to reboot system: "
+    read
+    /sbin/reboot -f
+}
+
+display_message() {
+    echo "Rebooting in 5 seconds..."
+    sleep 5
+    echo
+    /sbin/reboot -f
+}
+
+# Validate the given username.
+# Rules adapted from vyatta_check_username.pl.
+# TODO: In future make this into a common library function.
+name_is_valid() {
+    user=$1;
+    if [ ${#user} -le 0 ] || [ ${#user} -gt 32 ]; then
+        echo "username must be 1 to 32 characters long"
+        return 0
+    fi
+    if ! echo "$user" | grep -qP "^\w[^ \t\n\r\v\f:\/]*$"; then
+        echo "illegal characters in username"
+        return 0
+    fi
+    if ! echo "$user" | grep -qP "^[a-z_][a-z0-9_-]*$"; then
+        echo "username contains unusual characters"
+        echo "- should only contain lower case letters, digits, underscores or dashes"
+        return 0
+    fi
+
+    # Looks OK.
+    return 1;
+}
+
+# Run the scripts that init would do when doing standalone
+[ -f /etc/init.d/rcS ] && /etc/init.d/rcS
+
+echo "Standalone user password recovery tool."
+echo
+
+#
+# Check to see if we are running in standalone mode.
+# We'll know that we are if our pid is 1.
+#
+if [ "$$" != "1" ]; then
+    echo "This tool can only be run in standalone mode."
+    exit 1
+fi
+
+#
+# OK, now we know we are running in standalone mode.
+# Talk to the user.
+#
+echo -n "Do you wish to reset the local system user password? (y or n) "
+read -t $TIME_TO_WAIT response
+if [ "$?" != "0" ]; then
+    echo
+    echo "Response not received in time."
+    echo "The user password will not be reset."
+    display_message
+fi
+
+response=${response:0:1}
+if [ "$response" != "y" -a "$response" != "Y" ]; then
+    echo "OK, the user password will not be reset."
+    display_message
+fi
+
+echo "Starting process to reset the password..."
+
+echo "Re-mounting root filesystem read/write..."
+mount -o remount,rw /
+
+if [ ! -f /etc/passwd ]
+then dead "Missing password file"
+fi
+
+if [ ! -d /opt/vyatta/etc/config ]
+then dead "Missing Vyatta config directory /opt/vyatta/etc/config"
+fi
+
+if [ ! -f $CF ]
+then dead "$CF file not found"
+fi
+
+# Read a valid username.
+while : ; do {
+    read -r -p "Enter the local username for password reset: " name
+    name_is_valid "$name" || break;
+}
+done
+
+# Prevent the root password from being (re)set.
+if [ "$user" == "root" ]
+then
+    echo "This tool cannot be used to reset the root password"
+    display_message
+fi
+
+if ! egrep -q "[[:space:]]*user $user[[:space:]]+" $CF; then
+    echo "User '$user' doesn't exist on the local system"
+    display_message
+fi
+
+echo "Setting the user '$user' password..."
+change_password "$user"
+echo "$(date "+%b%e %T") $(hostname) User password changed" \
+    | tee -a /var/log/auth.log  >>/var/log/messages
+
+sync
+
+echo "System will reboot in 10 seconds..."
+sleep 10
+/sbin/reboot -f

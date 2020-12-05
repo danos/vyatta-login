@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+syntax:expression: $VAR(@) in "ssh-rsa" , "ssh-dss" || pattern $VAR(@)"^ecdsa-sha2-" ; "Unknown key type: '$VAR(@)'"

@@ -1,0 +1,8 @@
+#!/opt/vyatta/bin/cliexpr
+syntax:expression: exec "if [ \"$VAR(/system/password/requirements/@)\" ]; then \
+                            echo \"$VAR(@)\"|pwscore >/dev/null || exit 1; \
+                            if [ \"$VAR(../../@)\" == \"$VAR(@)\" ]; then \
+                                echo \"Password cannot match username\"; \
+                                exit 1; \
+                            fi; \
+                         fi;"

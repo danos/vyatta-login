@@ -1,0 +1,36 @@
+#!/bin/bash
+# **** License ****
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# This code was originally developed by Vyatta, Inc.
+# Copyright (C) 2007-2010 Vyatta, Inc.
+# All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# **** End License ****
+
+source /etc/default/vyatta
+
+: "${vyatta_prefix:=/opt/vyatta}"
+: "${vyatta_sysconfdir:=${vyatta_prefix}/etc}"
+
+## Update the version information
+update_version_info () {
+    if [ -f "${vyatta_sysconfdir}/version.master" ]; then
+	cp -u "${vyatta_sysconfdir}/version.master" "${vyatta_sysconfdir}/version"
+    fi
+}
+
+update_version_info
+
+# Clear out login banner changes
+for f in /etc/issue /etc/issue.net
+do
+    if [ -f $f.old ]
+    then mv $f.old $f
+    fi
+done

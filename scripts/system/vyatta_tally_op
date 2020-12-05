@@ -1,0 +1,76 @@
+#!/usr/bin/perl
+
+# **** License ****
+#
+# Copyright (c) 2018-2019 AT&T Intellectual Property.
+#   All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+#
+# **** End License ****
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use File::Basename;
+use JSON;
+
+use lib "/opt/vyatta/share/perl5";
+use Vyatta::Configd;
+
+sub tally_show_op {
+    my $client = Vyatta::Configd::Client->new();
+    my $output = $client->tree_get_full_hash("system login user-info");
+    foreach my $user ( @{$output->{'user-info'}->{'user'}} ) {
+        if ( $user->{'tally-counter'} > 0 ) {
+            print "User $user->{'name'}\thas $user->{'tally-counter'}\n";
+        }
+    }
+}
+
+sub tally_show_prompt {
+    my $client = Vyatta::Configd::Client->new();
+    my $output = $client->tree_get_full_hash("system login user-info");
+    foreach my $user ( @{$output->{'user-info'}->{'user'}} ) {
+        if ( $user->{'tally-counter'} > 0 ) {
+            print "$user->{'name'}\n";
+        }
+    }
+}
+
+sub tally_reset_user_op {
+    my $user   = $ARGV[0];
+    my $client = Vyatta::Configd::Client->new();
+
+    my $output = $client->call_rpc_hash( "vyatta-system-login-tally-v1",
+        "reset-lockout", { 'user' => $user } );
+}
+
+sub call_action_by_name {
+    my ( $actions, $script_name, $opt_name, $usage ) = @_;
+
+    my $usagefn = sub {
+        printf( "Usage for %s %s:\n", $script_name, $usage );
+        printf( "    %s %s --%s=[%s]\n",
+            $script_name, $usage, $opt_name, join( "|", keys( %{$actions} ) ) );
+        exit(1);
+    };
+
+    my ($name);
+    GetOptions( "$opt_name=s" => \$name, ) or $usagefn->();
+    $usagefn->() unless ( defined($name) );
+
+    my $action = $actions->{$name};
+    $usagefn->() unless ( defined($action) );
+
+    return $action->();
+}
+
+my %actions = (
+    "show"        => \&tally_show_op,
+    "show-prompt" => \&tally_show_prompt,
+    "reset"       => \&tally_reset_user_op,
+);
+call_action_by_name( \%actions, basename($0), "action", "" );

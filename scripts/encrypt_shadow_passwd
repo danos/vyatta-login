@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Requires SECRET environment variable
+
+METHOD="sha-512"
+
+[ -z "$SECRET" ] && exit 1
+
+echo -n "$SECRET" | MKPASSWD_OPTIONS="-m $METHOD -s" mkpasswd | tr -d \\n

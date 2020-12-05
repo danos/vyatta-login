@@ -1,0 +1,78 @@
+# Configuration for systemwide password quality limits
+# Defaults:
+#
+# Number of characters in the new password that must not be present in the
+# old password.
+# difok = 1
+#
+# Minimum acceptable size for the new password (plus one if
+# credits are not disabled which is the default). (See pam_cracklib manual.)
+# Cannot be set to lower value than 6.
+[% IF requirements.item('length') %]
+minlen = [% requirements.item('length') %]
+[% ELSE %]
+# minlen = 10
+[% END %]
+#
+# The maximum credit for having digits in the new password. If less than 0
+# it is the minimum number of digits in the new password.
+[% IF requirements.classes.item('digits') > 0 %]
+dcredit = [% requirements.classes.item('digits') * -1 %]
+[% ELSE %]
+# dcredit = 0
+[% END %]
+#
+# The maximum credit for having uppercase characters in the new password.
+# If less than 0 it is the minimum number of uppercase characters in the new
+# password.
+[% IF requirements.classes.item('upper') > 0 %]
+ucredit = [% requirements.classes.item('upper') * -1 %]
+[% ELSE %]
+# ucredit = 0
+[% END %]
+#
+# The maximum credit for having lowercase characters in the new password.
+# If less than 0 it is the minimum number of lowercase characters in the new
+# password.
+[% IF requirements.classes.item('lower') > 0 %]
+lcredit = [% requirements.classes.item('lower') * -1 %]
+[% ELSE %]
+# lcredit = 0
+[% END %]
+#
+# The maximum credit for having other characters in the new password.
+# If less than 0 it is the minimum number of other characters in the new
+# password.
+[% IF requirements.classes.item('others') > 0 %]
+ocredit = [% requirements.classes.item('others') * -1 %]
+[% ELSE %]
+# ocredit = 0
+[% END %]
+#
+# The minimum number of required classes of characters for the new
+# password (digits, uppercase, lowercase, others).
+[% IF requirements.classes.item('min-class') %]
+minclass = [%requirements.classes.item('min-class') %]
+[% ELSE %]
+# minclass = 0
+[% END %]
+#
+# The maximum number of allowed consecutive same characters in the new password.
+# The check is disabled if the value is 0.
+# maxrepeat = 0
+#
+# The maximum number of allowed consecutive characters of the same class in the
+# new password.
+# The check is disabled if the value is 0.
+# maxclassrepeat = 0
+#
+# Whether to check for the words from the passwd entry GECOS string of the user.
+# The check is enabled if the value is not 0.
+[% IF requirements.item('disable-gecos-check') %]
+gecoscheck = 0
+[% ELSE %]
+gecoscheck = 1
+[% END %]
+#
+# Path to the cracklib dictionaries. Default is to use the cracklib default.
+# dictpath =

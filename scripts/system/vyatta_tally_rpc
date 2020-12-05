@@ -1,0 +1,59 @@
+#!/usr/bin/perl
+
+# **** License ****
+#
+# Copyright (c) 2018-2020 AT&T Intellectual Property.
+#   All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+#
+# **** End License ****
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use File::Basename;
+use JSON;
+
+use lib "/opt/vyatta/share/perl5";
+use Vyatta::Configd;
+use IPC::Run3;
+
+sub tally_reset_user_rpc {
+    my $in    = do { local $/; <> };
+    my $input = decode_json($in);
+    my $user  = $input->{'user'};
+
+    my @cmd= ("pam_tally", "--reset", "--user", $user);
+    die "failed to spwan sub process\n"
+      unless run3( \@cmd, \undef, \undef, \undef );
+    print encode_json({});
+}
+
+sub call_action_by_name {
+    my ( $actions, $script_name, $opt_name, $usage ) = @_;
+
+    my $usagefn = sub {
+        printf( "Usage for %s %s:\n", $script_name, $usage );
+        printf( "    %s %s --%s=[%s]\n",
+            $script_name, $usage, $opt_name, join( "|", keys( %{$actions} ) ) );
+        exit(1);
+    };
+
+    my ($name);
+    GetOptions( "$opt_name=s" => \$name, ) or $usagefn->();
+    $usagefn->() unless ( defined($name) );
+
+    my $action = $actions->{$name};
+    $usagefn->() unless ( defined($action) );
+
+    return $action->();
+}
+
+my %actions = (
+    "show"  => \&tally_show_rpc,
+    "reset" => \&tally_reset_user_rpc,
+);
+call_action_by_name( \%actions, basename($0), "action", "" );

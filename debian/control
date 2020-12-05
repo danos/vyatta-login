@@ -1,0 +1,63 @@
+Source: vyatta-login
+Section: contrib/net
+Priority: optional
+Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+Build-Depends:
+ cpio,
+ debhelper (>= 9.20160709),
+ debhelper (>= 9.20160403~) | dh-autoreconf,
+ dh-yang,
+Standards-Version: 4.3.0
+
+Package: vyatta-system-login-v1-yang
+Architecture: all
+Depends:
+ cracklib-runtime,
+ libpwquality-tools,
+ vyatta-login,
+ ${misc:Depends},
+ ${yang:Depends}
+Breaks: vyatta-cfg-system (<< 1.6.0)
+Replaces: vyatta-cfg-system (<< 1.6.0)
+Description: vyatta-system-login-v1 module
+ System login configuration. It also includes the systems minimum password
+ standards. They are based on pwquality's password restrictions.
+
+Package: vyatta-login
+Architecture: all
+Depends:
+ adduser,
+ libpam-runtime (>= 1.0.1-5),
+ libfile-temp-perl,
+ libipc-run3-perl,
+ libnetaddr-ip-perl,
+ libtemplate-perl,
+ libjson-perl,
+ libvyatta-cfgclient-perl,
+ util-linux (>= 2.20.1-5),
+ vyatta-debian-pam-configs-config,
+ vyatta-debian-passwd-config,
+ vyatta-debian-system-config,
+ vyatta-debian-systemd-config,
+ vyatta-util (>= 0.16),
+ vyatta-cfg,
+ ${misc:Depends},
+ ${perl:Depends},
+Description: System login command helper scripts
+ Scripts to help with all system login functions
+
+Package: vyatta-op-reset-system-login-v1-yang
+Architecture: all
+Breaks: vyatta-op-reset-system-v1-yang (<< 2.29)
+Replaces: vyatta-op-reset-system-v1-yang (<< 2.29)
+Depends: vyatta-login, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-reset-system-login-v1 module
+ The YANG module for reset system login operational commands
+
+Package: vyatta-op-show-system-login-v1-yang
+Architecture: all
+Breaks: vyatta-op-show-system-v1-yang (<< 2.29)
+Replaces: vyatta-op-show-system-v1-yang (<< 2.29)
+Depends: vyatta-login, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-system-login-v1 module
+ The YANG module for show system login operational commands

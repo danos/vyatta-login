@@ -1,0 +1,2 @@
+help: Show current login level
+run: ${vyatta_bindir}/vyatta-show-current-user --print-level

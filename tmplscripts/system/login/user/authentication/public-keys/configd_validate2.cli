@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+commit:expression: $VAR(./key/) != "" ; "Must configure public key value for $VAR(@)"

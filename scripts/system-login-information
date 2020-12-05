@@ -1,0 +1,162 @@
+#! /usr/bin/perl
+
+# **** License ****
+#
+# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# Copyright (c) 2014 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# This code was originally developed by Vyatta, Inc.
+# Portions created by Vyatta are Copyright (C) 2007-2013 Vyatta, Inc.
+# All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Author: Stephen Hemminger
+# Date: Sept 2009
+# Description: Show password accounts
+#
+# **** End License ****
+
+# Ver 2.0:
+# - Converted to vyatta state format
+# - Replace Vyatta::Config with Vyatta::Configd
+# - Becomes global state generator for vyatta-system-login-v1:user-info
+# August 14th, 2018
+#
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5";
+use Vyatta::Configd;
+
+use JSON;
+use IO::Seekable;
+use File::Basename;
+use Getopt::Long;
+use POSIX qw(strftime);
+
+use constant {
+    VYATTA => 0x1,
+    OTHER  => 0x2,
+    LOCKED => 0x4,
+};
+
+sub to_iso8601 {
+    my ($time) = @_;
+    
+	my $tz = strftime( "%z", localtime($time) );
+    #timezone needs conversion from [+-]hhmm to [+-]hh:mm
+    $tz =~ s/(\d{2})(\d{2})/$1:$2/;
+
+    # ISO8601 formatted date.
+    return strftime( "%FT%T", localtime($time) ) . $tz;
+}
+
+
+sub get_tally_count {
+    my ($user_hash) = @_;
+    my @ret = split /\n/, `pam_tally`;
+    foreach my $account (@ret) {
+        if ( $account =~ m/User (\S+)\s*(\S+)\s*has (\S+)/ ) {
+            my ($user, $id, $count) = ($1,$2,$3);
+            push @{%{$user_hash}{$user}}, $count;
+        }
+    }
+}
+
+sub get_state {
+
+    # Read list of Vyatta users
+    my $client = Vyatta::Configd::Client->new();
+    my $tree   = $client->tree_get_full_hash("system login user");
+    my %vuser  = map { $_->{'tagnode'} => 1 } @{ $tree->{'user'} };
+
+    # Setup to access lastlog
+    open( my $lastlog, '<', "/var/log/lastlog" )
+      or die "can't open /var/log/lastlog:$!";
+
+    # Magic values based on binary format of last log
+    # See /usr/include/bits/utm.h
+    my $typedef = 'L Z32 Z256';
+    my $reclen  = length( pack($typedef) );
+
+    my $lastlogin = sub {
+        my $uid = shift;
+        sysseek( $lastlog, $uid * $reclen, SEEK_SET )
+          or die "seek failed: $!";
+        my ( $rec, $line, $host, $time );
+        if ( sysread( $lastlog, $rec, $reclen ) == $reclen ) {
+            my ( $time, $line, $host ) = unpack( $typedef, $rec );
+            return scalar( to_iso8601($time) ), $line, $host
+              if ( $time != 0 );
+        }
+        return ( "never logged in", "", "" );
+    };
+
+    # Walk password file
+    # Note: this only works as root
+    my %users;
+    setpwent();
+    while ( my ( $u, $p, $uid ) = getpwent() ) {
+        my $l = length($p);
+        my $type = defined( $vuser{$u} ) ? 'vyatta' : 'other';
+        if ( $l == 1 ) {
+            $type = 'locked';
+        }
+        my ( $time, $line, $host ) = $lastlogin->($uid);
+
+        $users{$u} = [ $u, $type, $time ];
+    }
+    endpwent();
+    close $lastlog;
+
+    # Check tally counter
+    #
+    get_tally_count(\%users);
+
+    my $format_user_data = sub {
+        my ($u)  = @_;
+        my $data = $users{$u};
+        my $out  = {
+            "name"       => @{$data}[0],
+            "type"       => @{$data}[1],
+            "last-login" => @{$data}[2],
+        };
+	$out->{'tally-counter'} = 0;
+	$out->{'tally-counter'} = @{$data}[3] if defined @{$data}[3];
+        return $out;
+    };
+    my @output = map { $format_user_data->($_) } keys %users;
+    print encode_json( { 'user' => \@output } );
+}
+
+sub call_action_by_name {
+    my ( $actions, $script_name, $opt_name, $usage ) = @_;
+
+    my $usagefn = sub {
+        printf( "Usage for %s %s:\n", $script_name, $usage );
+        printf( "    %s %s --%s=[%s]\n",
+            $script_name, $usage, $opt_name, join( "|", keys( %{$actions} ) ) );
+        exit(1);
+    };
+
+    my ($name);
+    GetOptions( "$opt_name=s" => \$name, ) or $usagefn->();
+    $usagefn->() unless ( defined($name) );
+
+    my $action = $actions->{$name};
+    $usagefn->() unless ( defined($action) );
+
+    return $action->();
+}
+
+my %actions = ( "get-state" => \&get_state, );
+call_action_by_name( \%actions, basename($0), "action", "" );

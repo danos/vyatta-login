@@ -1,0 +1,2 @@
+help: Show current login group information
+run: ${vyatta_bindir}/vyatta-show-current-user --print-group

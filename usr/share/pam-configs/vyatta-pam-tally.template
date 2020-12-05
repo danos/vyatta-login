@@ -1,0 +1,8 @@
+Name: Vyatta pam tally
+Default: yes
+Priority: 512
+Auth-Type: Primary
+Auth:
+        required pam_tally.so [% PAM_TALLY_PARAMS %]
+Auth-Initial:
+        required pam_tally.so [% PAM_TALLY_PARAMS %]

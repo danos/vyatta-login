@@ -1,0 +1,63 @@
+#! /bin/bash
+#
+# Copyright (c) 2017,2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# This is a script that prints the current user/groups from the user that
+# executed this script.
+
+# We have to get user from who executed the 'show login' command since configd
+# now runs as root. 'id -un' was used previously.
+
+usage() { echo "Usage: $0 [--print-all] [--print-user] [--print-group] [--print-level]"; exit 1; }
+OPTS=$(getopt -o '' --long print-user,print-group,print-all,print-level -- "$@")
+if [ $? != 0 ]; then
+	echo "failed to get command line arguments"
+	exit 1
+fi
+eval set -- "$OPTS"
+
+USER=$(getent passwd "$(cat /proc/$$/loginuid)" | cut -d: -f 1)
+GRP=$(groups "$USER" | cut -d':' -f2 | cut -c 2-)
+if [[ -z "$USER" || -z "$GRP" ]]; then
+	echo "Could not get user or group"
+	exit 1
+fi
+
+#Need to add some spaces for regex
+GRP=" $GRP "
+
+if [[ $GRP == *" vyattasu "* ]]; then
+  LEVEL="Superuser"
+elif [[ $GRP == *" vyattaadm "* ]]; then
+  LEVEL="Admin"
+elif [[ $GRP == *" vyattaop "* ]]; then
+  LEVEL="Operator"
+else
+  echo "Could not get user level"
+  exit 1
+fi
+
+case $1 in
+	--print-user)
+		echo "$USER"
+		;;
+	--print-group)
+		echo "$GRP"
+		;;
+	--print-level)
+		echo "$LEVEL"
+		;;
+	--print-all)
+		echo -n "login     : " ; echo "$USER"
+		echo -n "level     : " ; echo "$LEVEL"
+		echo -n "user      : " ; echo "$USER"
+		echo -n "groups    : " ; echo "$GRP"
+		;;
+	*)
+		usage
+		;;
+esac

@@ -1,0 +1,122 @@
+module vyatta-system-login-tally-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-system-login-tally:1";
+	prefix vyatta-system-login-tally-v1;
+
+	import vyatta-system-v1 {
+		prefix system;
+	}
+	import vyatta-system-login-v1 {
+		prefix system-login;
+	}
+	import vyatta-system-tacplus-v1 {
+		prefix tacplus;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+ 
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	description
+		"Copyright (c) 2018-2019 AT&T Intellectual Property
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or without
+		 modification, are permitted provided that the following conditions
+		 are met:
+
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 The YANG module for vyatta-system-login-tally-v1.
+		 This is a wrapper yang for the pam_tally2.so used in
+		 pam authentication.";
+
+	revision 2018-08-28 {
+		description "Initial revision of version 1.";
+	}
+
+	augment /system:system/system-login:login {
+		container auto-disable {
+			description "Local login account auto disable";
+			configd:help "Local login account auto disable";
+			presence "Enable auto disable";
+			must "not(/system:system/system-login:login/tacplus:tacplus-server)" {
+				error-message "Cannot also configure Tacacs+ server";
+			}
+			leaf attempts {
+				configd:help "Disables user after N failed login attempts.";
+				description "Disables user after N failed login attempts.";
+				type uint16 {
+					range 1..max;
+				}
+				default 5;
+			}
+			leaf duration {
+				configd:help "Disables user for N seconds after failed login attempts";
+				description "Disables user for N seconds after failed login attempts";
+				type uint32 {
+					range 1..max;
+				}
+				default 600;
+				units "seconds";
+			}
+		}
+	}
+	
+	augment /system:system/system-login:login/system-login:user-info/system-login:user {
+		leaf tally-counter {
+			description "Tally counter";
+			type uint16;
+		}
+	}
+
+	grouping system-tally-output {
+		leaf output {
+			description "The system tally command output";
+			type string;
+		}
+	}
+
+	rpc reset-lockout {
+		description "Resets the lockout counter for a system user";
+		input {
+			leaf user {
+				description "Reset this users lockout counter";
+				mandatory true;
+				type string;
+			}
+		}
+		output {
+			uses system-tally-output;
+		}
+		configd:call-rpc "vyatta_tally_rpc --action=reset";
+	}
+}

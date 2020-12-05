@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+syntax:expression: $VAR(@) == "*" || $VAR(*) == "!" || pattern $VAR(@)"^[a-zA-Z0-9\.\/]{13}$" || pattern $VAR(@)"^\\$1\\$[a-zA-Z0-9\./]*\\$[a-zA-Z0-9\./]{22}$" || pattern $VAR(@)"^\\$5\\$[a-zA-Z0-9\./]*\\$[a-zA-Z0-9\./]{43}$" || pattern $VAR(@)"^\\$6\\$[a-zA-Z0-9\./]*\\$[a-zA-Z0-9\./]{86}$" ; "Not a valid encrypted password for user $VAR(../../@)"

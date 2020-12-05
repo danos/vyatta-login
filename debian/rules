@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+#
+# This debian/rules uses debhelper.
+#
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+override_dh_auto_configure:
+	dh_auto_configure -- --prefix=/opt/vyatta --sysconfdir=/opt/vyatta/etc
+
+# verbose output of unittest logs
+override_dh_auto_test:
+	dh_auto_test -- VERBOSE=1
+
+# *.yang files and related templates are distributed via debian install files
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/vyatta-login
+	mkdir -p debian/tmp/usr/share
+	mv debian/vyatta-login/usr/share/configd debian/tmp/usr/share
+
+%:
+	dh $@ --with autoreconf --with=yang
