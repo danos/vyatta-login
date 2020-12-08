@@ -23,7 +23,7 @@ module vyatta-system-login-v1 {
 		 Web: www.att.com";
 
 	description
-		"Copyright (c) 2017-2019, AT&T Intellectual Property.
+		"Copyright (c) 2017-2020, AT&T Intellectual Property.
 		 All rights reserved.
 
 		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
@@ -60,6 +60,10 @@ module vyatta-system-login-v1 {
 
 		 System login configuration";
 
+	revision 2020-12-15 {
+		description "Add new state node for date and time when
+                 user's password expires.";
+	}
 	revision 2018-12-18 {
 		description "Remove invalid metachars from pattern string.
 			     Add RADIUS system-user login feature.
@@ -292,32 +296,32 @@ module vyatta-system-login-v1 {
 					configd:delete "/opt/vyatta/share/tmplscripts/system/login/banner/post-login/configd_delete.sh";
 				}
 			}
-            container user-info {
-                config false;
-                description "State of users configured on the system";
-                configd:get-state "/opt/vyatta/sbin/system-login-information --action=get-state";
-                list user {
-                    key "name";
-                    leaf name {
-                        description "Username";
-                        type string;
-                    }
-                    leaf type {
-                        description "Account type";
-                        type enumeration {
-                            enum "vyatta" {
-                                description "Vyatta generated user account";
-                            }
-                            enum "other" {
-                                description "Other linux system account";
-                            }
-                            enum "locked" {
-                                description "Locked linux system account";
-                            }
-                        }
-                    }
-                    leaf last-login {
-                        description "Users last login";
+			container user-info {
+				config false;
+				description "State of users configured on the system";
+				configd:get-state "/opt/vyatta/sbin/system-login-information --action=get-state";
+				list user {
+					key "name";
+					leaf name {
+						description "Username";
+						type string;
+					}
+					leaf type {
+						description "Account type";
+						type enumeration {
+							enum "vyatta" {
+								description "Vyatta generated user account";
+							}
+							enum "other" {
+								description "Other linux system account";
+							}
+							enum "locked" {
+								description "Locked linux system account";
+							}
+						}
+					}
+					leaf last-login {
+						description "The data and time when the user last logged in";
 						type union {
 							type ytypes:date-and-time;
 							type string {
@@ -325,8 +329,17 @@ module vyatta-system-login-v1 {
 							}
 						}	
 					}
-                }
-            }
+					leaf password-expiry {
+						description "The date and time when the user's password expires";
+						type union {
+							type ytypes:date-and-time;
+							type string {
+								pattern "never";
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }

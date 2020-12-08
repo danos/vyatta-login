@@ -2,7 +2,7 @@
 
 # **** License ****
 #
-# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# Copyright (c) 2018-2020 AT&T Intellectual Property.
 #   All Rights Reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
@@ -28,10 +28,10 @@ sub get_login_hash {
 
 sub show_user_printf {
     my ($user) = @_;
-    my $fmt = "%-30s %-7s %s\n";
-    printf $fmt, "Username", "Type", "Last login";
+    my $fmt = "%-30s %-7s %-26s %s\n";
+    printf $fmt, "Username", "Type", "Last login", "Password expiry";
     foreach my $u ( @{$user} ) {
-        printf $fmt, $u->{'name'}, $u->{'type'}, $u->{'last-login'};
+        printf $fmt, $u->{'name'}, $u->{'type'}, $u->{'last-login'}, $u->{'password-expiry'};
     }
 }
 

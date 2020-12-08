@@ -17,6 +17,7 @@ initd_SCRIPTS =
 
 pamconfig_DATA = usr/share/pam-configs/umask
 
+bin_SCRIPTS  += scripts/check_old_passwords
 bin_SCRIPTS  += scripts/encrypt_shadow_passwd
 bin_SCRIPTS  += scripts/show-users-op
 bin_SCRIPTS  += scripts/system/vyatta_tally_op

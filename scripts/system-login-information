@@ -2,7 +2,7 @@
 
 # **** License ****
 #
-# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# Copyright (c) 2018-2020, AT&T Intellectual Property.
 # All Rights Reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
@@ -42,6 +42,8 @@ use IO::Seekable;
 use File::Basename;
 use Getopt::Long;
 use POSIX qw(strftime);
+use IPC::Run3;
+use Time::Local;
 
 use constant {
     VYATTA => 0x1,
@@ -70,6 +72,34 @@ sub get_tally_count {
             push @{%{$user_hash}{$user}}, $count;
         }
     }
+}
+
+sub get_password_expiry {
+    my $u = shift;
+
+    my %mon2num =
+      qw(Jan 0 Feb 1 Mar 2 Apr 3 May 4 Jun 5 Jul 6 Aug 7 Sep 8 Oct 9 Nov 10 Dec 11);
+
+    my $edate = "";
+    my @cmd   = ( 'chage', '-l', $u );
+    my @lines;
+    eval { run3( \@cmd, undef, \@lines ) };
+    return $edate if ($@);
+    foreach my $line (@lines) {
+        if ( $line =~ /^Password expires\s*:/ ) {
+            chomp( ( undef, $edate ) = split( /:/, $line ) );
+            $edate =~ s/^\s+|\s+$//g;
+            if ( $edate ne 'never' ) {
+                my ( $monday, $year ) = split( /,/, $edate,  2 );
+                my ( $mon,    $day )  = split( / /, $monday, 2 );
+                $day =~ s/,//g;
+                my $secs = timelocal( 0, 0, 0, $day, $mon2num{$mon}, $year );
+                $edate = scalar( to_iso8601($secs) );
+            }
+            last;
+        }
+    }
+    return $edate;
 }
 
 sub get_state {
@@ -130,8 +160,9 @@ sub get_state {
             "type"       => @{$data}[1],
             "last-login" => @{$data}[2],
         };
-	$out->{'tally-counter'} = 0;
-	$out->{'tally-counter'} = @{$data}[3] if defined @{$data}[3];
+        $out->{'tally-counter'} = 0;
+        $out->{'tally-counter'} = @{$data}[3] if defined @{$data}[3];
+        $out->{'password-expiry'} = get_password_expiry($u);
         return $out;
     };
     my @output = map { $format_user_data->($_) } keys %users;
