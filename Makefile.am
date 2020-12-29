@@ -34,6 +34,7 @@ sbin_SCRIPTS += scripts/vyatta-banner.pl
 sbin_SCRIPTS += scripts/vyatta-change-password
 
 share_perl5_login_DATA = lib/Vyatta/Login/User.pm
+share_perl5_login_DATA += lib/Vyatta/Login/Password.pm
 
 vyatta_security_DATA = etc/security/pwquality.config.template
 

@@ -17,10 +17,9 @@ package Vyatta::Login::User;
 use strict;
 use warnings;
 use lib "/opt/vyatta/share/perl5";
+use Vyatta::Login::Password qw( save_old_password delete_user_from_opwdfile );
 use JSON;
 use IPC::Run3;
-use File::Slurp qw(read_file);
-use File::Temp qw( tempfile tempdir );
 
 use constant {
     ADD_OR_CHANGE => 0,
@@ -28,8 +27,6 @@ use constant {
 };
 
 my $levelFile = "/opt/vyatta/etc/level";
-my $opwdDir   = "/etc/vyatta/login";
-my $opwdFile  = "$opwdDir/opasswd.vyatta.json";
 
 # Convert level to additional groups
 sub _level_groups {
@@ -110,22 +107,6 @@ sub _authorized_keys {
     return;
 }
 
-sub _delete_user_from_opwdfile {
-    my $user = shift;
-    return unless defined($user);
-
-    return unless ( -e $opwdFile );
-    my $opwds = decode_json( read_file($opwdFile) );
-    return if !defined($opwds);
-    delete $opwds->{$user} if exists $opwds->{$user};
-    my ( $fh, $filename ) = tempfile( DIR => $opwdDir );
-    chmod( 0600, $fh );
-    print $fh encode_json($opwds);
-    close($fh);
-    rename( $filename, $opwdFile );
-    return;
-}
-
 sub _delete_user {
     my $user  = shift;
     my $sid   = $ENV{VYATTA_CONFIG_SID};
@@ -166,35 +147,7 @@ sub _delete_user {
         die "userdel of $user failed: $?\n"
           unless run3( ["userdel", "--remove", $user], \undef, \undef, \undef );
     }
-    _delete_user_from_opwdfile($user);
-    return;
-}
-
-sub _save_old_password {
-    my ( $user, $pwd, $hist ) = @_;
-    return unless ( defined($user) && defined($pwd) && defined($hist) );
-
-    my $r = $hist->{'history'}->{'forbid-previous'};
-    return if !defined($r);
-
-    return unless ( -e $opwdFile );
-    my $opwds = decode_json( read_file($opwdFile) );
-    return if !defined($opwds);
-
-    if ( exists $opwds->{$user} ) {
-        shift( @{ $opwds->{$user}->{'old-passwords'} } )
-          if ( $opwds->{$user}->{'count'} >= $r );
-        push( @{ $opwds->{$user}->{'old-passwords'} }, $pwd );
-        $opwds->{$user}->{'count'} += 1;
-    } else {
-        my %opwd = ( 'count' => 1, 'old-passwords' => [$pwd] );
-        $opwds->{$user} = \%opwd;
-    }
-    my ( $fh, $filename ) = tempfile( DIR => $opwdDir );
-    chmod( 0600, $fh );
-    print $fh encode_json($opwds);
-    close($fh);
-    rename( $filename, $opwdFile );
+    delete_user_from_opwdfile($user);
     return;
 }
 
@@ -276,7 +229,7 @@ sub _update_user {
     if ( $result and $result ne "") {
         die "Attempt to change user $user failed: $result\n";
     }
-    _save_old_password( $user, $pwd, $hist ) if ( $pwd && defined($hist) );
+    save_old_password( $user, $pwd, $hist ) if ( $pwd && defined($hist) );
     return;
 }
 

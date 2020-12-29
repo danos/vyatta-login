@@ -13,21 +13,16 @@
 use strict;
 use warnings;
 use lib "/opt/vyatta/share/perl5";
-
 use Vyatta::Configd;
+use Vyatta::Login::Password qw( update_history );
 use Template;
 use IPC::Run3;
-use File::Temp qw( tempfile tempdir );
-use File::Slurp qw(read_file);
-use JSON;
 
 my $configd = Vyatta::Configd::Client->new();
 my $db      = $Vyatta::Configd::Client::AUTO;
 
 my $ptemplate = '/opt/vyatta/etc/security/pwquality.config.template';
 my $pcfg      = '/etc/security/pwquality.conf';
-my $opwdDir   = '/etc/vyatta/login';
-my $opwdFile  = "$opwdDir/opasswd.vyatta.json";
 
 sub get_pass_req {
     return unless $configd->node_exists( $db, "system password requirements" );
@@ -52,41 +47,6 @@ sub update_pwquality {
     $template->process( $fh, \%tree_in, $pcfg )
       or die __FILE__ . ": Could not fill out pwquality template\n";
     close($fh);
-}
-
-sub update_history {
-    my $req     = shift;
-    my %tree_in = %$req;
-
-    my $r = $tree_in{'requirements'}{'history'}{'forbid-previous'};
-    if ( !defined($r) ) {
-        unlink $opwdFile;
-        return;
-    }
-
-    die "Failed creating $opwdDir directory."
-      unless ( -e $opwdDir or mkdir( $opwdDir, 0700 ) );
-
-    my $opwds = {};
-    if ( -e $opwdFile ) {
-        $opwds = decode_json( read_file($opwdFile) );
-        die "Failed getting old passwords." unless defined($opwds);
-        while ( my ( $u, $pwd ) = each %{$opwds} ) {
-            if ( $pwd->{'count'} > $r ) {
-
-                # Remove extra old passwords
-                shift( @{ $pwd->{'old-passwords'} } )
-                  while ( $pwd->{'count'}-- > $r );
-                $pwd->{'count'} = $r;
-            }
-        }
-    }
-    my ( $fh, $filename ) = tempfile( DIR => $opwdDir );
-    chmod( 0600, $fh );
-    print $fh encode_json($opwds);
-    close($fh);
-    rename( $filename, $opwdFile );
-    return;
 }
 
 sub update_expiration {
