@@ -1,6 +1,6 @@
 # **** License ****
 #
-# Copyright (c) 2017-2020 AT&T Intellectual Property.
+# Copyright (c) 2017-2021 AT&T Intellectual Property.
 #    All Rights Reserved.
 # Copyright (c) 2014, 2016 Brocade Communications Systems, Inc.
 #    All Rights Reserved.
@@ -23,6 +23,7 @@ use File::Compare;
 use File::Copy;
 use Module::Load::Conditional qw[can_load];
 use IPC::Run3;
+use Sys::Syslog;
 
 my $vrf_available = can_load( modules => { "Vyatta::VrfManager" => undef }, 
         autoload => "true" );
@@ -116,8 +117,13 @@ sub update {
     close($cfg);
 
     if ( compare( $PAM_RAD_CFG, $PAM_RAD_TMP ) != 0 ) {
-	copy ($PAM_RAD_TMP, $PAM_RAD_CFG)
-              or die "Copy of $PAM_RAD_TMP to $PAM_RAD_CFG failed";
+        my $deprecated_msg =
+"RADIUS support is deprecated and will be removed in a future release";
+        syslog( "warning", $deprecated_msg );
+        print( $deprecated_msg . "\n" );
+
+        copy( $PAM_RAD_TMP, $PAM_RAD_CFG )
+          or die "Copy of $PAM_RAD_TMP to $PAM_RAD_CFG failed";
     }
     unlink($PAM_RAD_TMP);
 
