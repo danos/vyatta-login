@@ -23,6 +23,26 @@ Description: vyatta-system-login-v1 module
  System login configuration. It also includes the systems minimum password
  standards. They are based on pwquality's password restrictions.
 
+Package: vyatta-system-login-radius-routing-instance-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-login-radius-routing-instance-v1 module
+ The YANG module for vyatta-system-login-radius-routing-instance-v1
+
+Package: vyatta-radius-system-user-login-feature
+Architecture: all
+Depends:
+ ${misc:Depends},
+ vyatta-cfg-system,
+ libpam-radius-auth,
+ libvyatta-config-perl
+Breaks: vyatta-cfg-system (<< 2.20)
+Replaces: vyatta-cfg-system (<< 2.20)
+Section: contrib/net
+Priority: optional
+Description: Vyatta RADIUS system-user login feature flag
+ The feature flag for RADIUS system-user login feature
+
 Package: vyatta-login
 Architecture: all
 Depends:

@@ -23,7 +23,7 @@ module vyatta-system-login-v1 {
 		 Web: www.att.com";
 
 	description
-		"Copyright (c) 2017-2020, AT&T Intellectual Property.
+		"Copyright (c) 2017-2021, AT&T Intellectual Property.
 		 All rights reserved.
 
 		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.

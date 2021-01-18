@@ -1,0 +1,4 @@
+preconfig.d/5000-pam_radius_auth opt/vyatta/preconfig.d
+sysconf/pam_radius.cfg opt/vyatta/etc
+lib/Vyatta/Login/RadiusServer.pm opt/vyatta/share/perl5/Vyatta/Login
+features opt/vyatta/etc/
