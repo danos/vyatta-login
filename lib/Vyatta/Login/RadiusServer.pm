@@ -41,7 +41,7 @@ sub remove_pam_radius {
     $ENV{"DEBIAN_FRONTEND"} = "noninteractive";
     my @cmd = ("pam-auth-update", "-package", "--remove", "radius");
     die "pam-auth-update remove failed"
-      unless run3( \@cmd, \undef, undef, undef );
+      unless run3( \@cmd, \undef, undef, undef ) && $? == 0;
     delete $ENV{"DEBIAN_FRONTEND"};
 
     unlink($PAM_RAD_AUTH)
@@ -55,7 +55,7 @@ sub add_pam_radius {
     $ENV{"DEBIAN_FRONTEND"} = "noninteractive";
     my @cmd = ("pam-auth-update", "-package", "radius");
     die "pam-auth-update add failed"
-      unless run3( \@cmd, \undef, undef, undef );
+      unless run3( \@cmd, \undef, undef, undef ) && $? == 0;
     delete $ENV{"DEBIAN_FRONTEND"};
 }
 
