@@ -18,11 +18,12 @@ use Getopt::Long;
 use File::Copy;
 use File::Compare;
 
-my $os_release_file    = '/etc/os-release';
-my $prelogin_file      = '/etc/issue';
-my $prelogin_net_file  = '/etc/issue.net';
-my $prelogin_ssh_file  = '/etc/issue.ssh';
-my $postlogin_file     = '/run/motd.vyatta';
+my $os_release_file         = '/etc/os-release';
+my $prelogin_file           = '/etc/issue';
+my $prelogin_net_file       = '/etc/issue.net';
+my $prelogin_ssh_file       = '/etc/issue.ssh';
+my $prelogin_net_vyata_file = '/etc/issue.net.vyatta';
+my $postlogin_file          = '/run/motd.vyatta';
 
 sub save_orig_file {
     my $file = shift;
@@ -112,9 +113,12 @@ sub perform_os_release_escapes {
     write_file_value( $dest, $text );
 }
 
-sub generate_prelogin_ssh_file {
-    perform_os_release_escapes( $prelogin_net_file, $prelogin_ssh_file );
-    chmod( 0644, $prelogin_ssh_file );
+sub generate_prelogin_files {
+    my @files = ( $prelogin_ssh_file, $prelogin_net_vyatta_file );
+    foreach my $file ( @files ) {
+        perform_os_release_escapes( $prelogin_file, $file );
+        chmod( 0644, $file );
+    }
 }
 
 sub add_prelogin {
@@ -150,7 +154,7 @@ die "Error: no banner-type"
 if ($action eq 'update') {
     if ($banner_type eq 'pre-login') {
         add_prelogin();
-        generate_prelogin_ssh_file();
+        generate_prelogin_files();
         exit 0;
     }
     if ($banner_type eq 'post-login') {
@@ -163,7 +167,7 @@ if ($action eq 'delete') {
     if ($banner_type eq 'pre-login') {
         restore_orig_file($prelogin_file);
         restore_orig_file($prelogin_net_file);
-        generate_prelogin_ssh_file();
+        generate_prelogin_files();
         exit 0;
     }
     if ($banner_type eq 'post-login') {
@@ -173,7 +177,7 @@ if ($action eq 'delete') {
 }
 
 if ( $action eq 'generate-ssh' ) {
-    generate_prelogin_ssh_file();
+    generate_prelogin_files();
     exit 0;
 }
 
