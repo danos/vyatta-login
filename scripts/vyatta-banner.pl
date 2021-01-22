@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 #
 # Copyright (c) 2009-2015, Brocade Communications Systems, Inc.
 # All rights reserved.
@@ -149,22 +149,22 @@ die "Error: no banner-type"
 
 if ($action eq 'update') {
     if ($banner_type eq 'pre-login') {
-	add_prelogin();
-    generate_prelogin_ssh_file();
-	exit 0;
+        add_prelogin();
+        generate_prelogin_ssh_file();
+        exit 0;
     }
     if ($banner_type eq 'post-login') {
-	add_postlogin();
-	exit 0;
+        add_postlogin();
+        exit 0;
     }
 }
 
 if ($action eq 'delete') {
     if ($banner_type eq 'pre-login') {
-	restore_orig_file($prelogin_file);
-	restore_orig_file($prelogin_net_file);
-    generate_prelogin_ssh_file();
-	exit 0;
+        restore_orig_file($prelogin_file);
+        restore_orig_file($prelogin_net_file);
+        generate_prelogin_ssh_file();
+        exit 0;
     }
     if ($banner_type eq 'post-login') {
         unlink($postlogin_file);
