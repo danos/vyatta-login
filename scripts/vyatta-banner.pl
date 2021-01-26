@@ -17,13 +17,14 @@ use Vyatta::Config;
 use Getopt::Long;
 use File::Copy;
 use File::Compare;
+use File::Temp qw/ tempfile /;
 
-my $os_release_file         = '/etc/os-release';
-my $prelogin_file           = '/etc/issue';
-my $prelogin_net_file       = '/etc/issue.net';
-my $prelogin_ssh_file       = '/etc/issue.ssh';
-my $prelogin_net_vyata_file = '/etc/issue.net.vyatta';
-my $postlogin_file          = '/run/motd.vyatta';
+my $os_release_file          = '/etc/os-release';
+my $prelogin_file            = '/etc/issue';
+my $prelogin_net_file        = '/etc/issue.net';
+my $prelogin_ssh_file        = '/etc/issue.ssh';
+my $prelogin_net_vyatta_file = '/etc/issue.net.vyatta';
+my $postlogin_file           = '/run/motd.vyatta';
 
 sub save_orig_file {
     my $file = shift;
@@ -114,11 +115,14 @@ sub perform_os_release_escapes {
 }
 
 sub generate_prelogin_files {
+    my ( $fh, $tmpfile ) = tempfile( DIR => '/etc' );
+    copy( $prelogin_net_file, $tmpfile );
     my @files = ( $prelogin_ssh_file, $prelogin_net_vyatta_file );
     foreach my $file ( @files ) {
-        perform_os_release_escapes( $prelogin_file, $file );
+        perform_os_release_escapes( $tmpfile, $file );
         chmod( 0644, $file );
     }
+    unlink($tmpfile);
 }
 
 sub add_prelogin {
