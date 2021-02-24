@@ -1,3 +1,24 @@
+vyatta-login (2.33) unstable; urgency=medium
+
+  [ Sharmila Podury ]
+  * Add Breaks/Replaces to debian/control
+  * Prohibit password reuse
+  * Refactor password history code into a perl module
+
+  [ Duncan Eastoe ]
+  * Add RADIUS pkgs, libraries, configs, etc.
+  * yang: deprecate radius-server configuration
+  * RadiusServer.pm: Log deprecation notice on cfg change
+  * RadiusServer.pm: correctly detect libpam-radius-auth ver.
+  * RadiusServer.pm: Check pam-auth-update exit code
+
+  [ Sharmila Podury ]
+  * Fix code indentation
+  * telnet login reports "Welcome to \S{NAME}"
+  * Fix typo and add temp file to process escape code
+
+ -- Colin Docherty <colin.docherty@att.com>  Wed, 24 Feb 2021 09:13:06 +0000
+
 vyatta-login (2.32) unstable; urgency=medium
 
   * Initial release.
