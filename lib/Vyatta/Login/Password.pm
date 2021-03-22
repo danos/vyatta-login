@@ -27,6 +27,9 @@ our @EXPORT_OK =
 my $opwdDir  = "/etc/vyatta/login";
 my $opwdFile = "$opwdDir/opasswd.vyatta.json";
 
+my $pamdPasswdFile = '/etc/pam.d/passwd';
+my $pamdLoginFile  = '/etc/pam.d/login';
+
 sub update_opasswd_file {
     my $opwds = shift;
 

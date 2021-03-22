@@ -7,6 +7,8 @@ Build-Depends:
  debhelper (>= 9.20160709),
  debhelper (>= 9.20160403~) | dh-autoreconf,
  dh-yang,
+ dh-python,
+ libpam0g-dev,
 Standards-Version: 4.3.0
 
 Package: vyatta-system-login-v1-yang
@@ -44,9 +46,10 @@ Description: Vyatta RADIUS system-user login feature flag
  The feature flag for RADIUS system-user login feature
 
 Package: vyatta-login
-Architecture: all
+Architecture: any
 Depends:
  adduser,
+ python3,
  libpam-runtime (>= 1.0.1-5),
  libfile-temp-perl,
  libipc-run3-perl,
@@ -61,6 +64,7 @@ Depends:
  vyatta-debian-systemd-config,
  vyatta-util (>= 0.16),
  vyatta-cfg,
+ libc6,
  ${misc:Depends},
  ${perl:Depends},
 Breaks: vyatta-system (<< 2.33)

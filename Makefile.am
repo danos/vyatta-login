@@ -1,3 +1,5 @@
+SUBDIRS = . src
+
 share_perl5dir = $(datarootdir)/perl5/Vyatta
 share_perl5_logindir = $(datarootdir)/perl5/Vyatta/Login
 etcdir = /etc
@@ -32,6 +34,7 @@ sbin_SCRIPTS += scripts/system/vyatta_update_login.pl
 sbin_SCRIPTS += scripts/system/update_password_quality.pl
 sbin_SCRIPTS += scripts/vyatta-banner.pl
 sbin_SCRIPTS += scripts/vyatta-change-password
+sbin_SCRIPTS += scripts/vyatta-update-password
 
 share_perl5_login_DATA = lib/Vyatta/Login/User.pm
 share_perl5_login_DATA += lib/Vyatta/Login/Password.pm
