@@ -1,0 +1,16 @@
+#! /bin/sh
+#
+# Make userid for vyatta password renewal
+
+set -e
+
+if [ "x$1" = xconfigure ]; then
+	if [ ! `getent group vyattapwdcfg >/dev/null` ]; then
+		 deluser --quiet --system vyattapwdcfg
+	fi
+	adduser --quiet --system --group --home /run/vyattapwdcfg vyattapwdcfg
+fi
+
+#DEBHELPER#
+
+exit 0
