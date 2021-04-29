@@ -29,6 +29,7 @@
 
 char *pwdfile = "/opt/vyatta/sbin/vyatta-update-password";
 char *lu = "/opt/vyatta/sbin/lu";
+char *pwduser = "vyattapwdcfg";
 
 int
 pam_sm_chauthtok(pam_handle_t *pamh, int pam_flags,
@@ -37,7 +38,7 @@ pam_sm_chauthtok(pam_handle_t *pamh, int pam_flags,
 {
 	const char *user;
 	const void *newpwd;
-	struct passwd *pwd;
+	struct passwd *pwd, *pwdcfg;
 	struct stat buf;
 	pid_t pid;
 	int fd[2];
@@ -60,6 +61,12 @@ pam_sm_chauthtok(pam_handle_t *pamh, int pam_flags,
 		pam_syslog(pamh, LOG_ERR,
 				"password - no passwd entry for user %s",
 				user);
+		return PAM_USER_UNKNOWN;
+	}
+	pwdcfg = pam_modutil_getpwnam(pamh, "vyattapwdcfg");
+	if (pwdcfg == NULL) {
+		pam_syslog(pamh, LOG_ERR,
+			"password - no passwd entry for user 'vyattapwdcfg'");
 		return PAM_USER_UNKNOWN;
 	}
 	if (!((pam_flags & PAM_UPDATE_AUTHTOK) &&
@@ -116,16 +123,8 @@ pam_sm_chauthtok(pam_handle_t *pamh, int pam_flags,
 		}
 		return PAM_SUCCESS;
 	} else {
-		char **args;
-		char *args_uid_0[] = { lu, "-user", (char *)user, pwdfile, NULL };
-		char *args_uid_user[] = { pwdfile, NULL };
+		char *args[] = { lu, "-user", (char *)pwduser, pwdfile, NULL };
 		char *env[] = { NULL };;
-
-		if (getuid() == 0) {
-			args = args_uid_0;
-		} else {
-			args = args_uid_user;
-		}
 
 		if (dup2(fd[0], STDIN_FILENO) == -1) {
 			pam_syslog(pamh, LOG_DEBUG,
@@ -135,6 +134,18 @@ pam_sm_chauthtok(pam_handle_t *pamh, int pam_flags,
 		}
 		close(fd[1]);
 
+		if (setregid(pwdcfg->pw_gid, -1) == -1) {
+			pam_syslog(pamh, LOG_DEBUG,
+					"password - setregid() error: %s",
+					strerror(errno));
+			_exit(1);;
+		}
+		if (setreuid(pwdcfg->pw_uid, -1) == -1) {
+			pam_syslog(pamh, LOG_DEBUG,
+					"password - setreuid() error: %s",
+					strerror(errno));
+			_exit(1);;
+		}
 		execve (args[0], args, env);
 
 		pam_syslog (pamh, LOG_DEBUG,
