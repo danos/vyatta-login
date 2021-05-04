@@ -49,7 +49,6 @@ Package: vyatta-login
 Architecture: any
 Depends:
  adduser,
- python3,
  libpam-runtime (>= 1.0.1-5),
  libfile-temp-perl,
  libipc-run3-perl,
@@ -64,13 +63,25 @@ Depends:
  vyatta-debian-systemd-config,
  vyatta-util (>= 0.16),
  vyatta-cfg,
- libc6,
+ vyatta-password-renewal,
+ ${shlibs:Depends},
  ${misc:Depends},
  ${perl:Depends},
 Breaks: vyatta-system (<< 2.33)
 Replaces: vyatta-system (<< 2.33)
 Description: System login command helper scripts
  Scripts to help with all system login functions
+
+Package: vyatta-password-renewal
+Architecture: all
+Depends:
+ python3,
+ libpam-pwquality,
+ lu,
+ python3-vyatta-cfgclient,
+ ${misc:Depends},
+Description: Script for password renewal
+ Script for renewing expired password
 
 Package: vyatta-op-reset-system-login-v1-yang
 Architecture: all
