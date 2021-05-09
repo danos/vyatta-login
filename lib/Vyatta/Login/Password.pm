@@ -21,11 +21,11 @@ use File::Slurp qw(read_file);
 use Template;
 use JSON;
 
-our @EXPORT_OK =
-  qw(update_history save_old_password delete_user_from_opwdfile is_old_password);
+our @EXPORT =
+  qw(update_opasswd_file save_old_password delete_user_from_opwdfile is_old_password $opwdDir $opwdFile);
 
-my $opwdDir  = "/etc/vyatta/login";
-my $opwdFile = "$opwdDir/opasswd.vyatta.json";
+our $opwdDir  = "/etc/vyatta/login";
+our $opwdFile = "$opwdDir/opasswd.vyatta.json";
 
 my $pamdPasswdFile = '/etc/pam.d/passwd';
 my $pamdLoginFile  = '/etc/pam.d/login';
@@ -33,42 +33,14 @@ my $pamdLoginFile  = '/etc/pam.d/login';
 sub update_opasswd_file {
     my $opwds = shift;
 
+    die "Failed creating $opwdDir directory."
+      unless ( -e $opwdDir or mkdir( $opwdDir, 0700 ) );
+
     my ( $fh, $filename ) = tempfile( DIR => $opwdDir );
     chmod( 0600, $fh );
     print $fh encode_json($opwds);
     close($fh);
     rename( $filename, $opwdFile );
-    return;
-}
-
-sub update_history {
-    my $req     = shift;
-    my %tree_in = %$req;
-
-    my $r = $tree_in{'requirements'}{'history'}{'forbid-previous'};
-    if ( !defined($r) ) {
-        unlink $opwdFile;
-        return;
-    }
-
-    die "Failed creating $opwdDir directory."
-      unless ( -e $opwdDir or mkdir( $opwdDir, 0700 ) );
-
-    my $opwds = {};
-    if ( -e $opwdFile ) {
-        $opwds = decode_json( read_file($opwdFile) );
-        die "Failed getting old passwords." unless defined($opwds);
-        while ( my ( $u, $pwd ) = each %{$opwds} ) {
-            if ( $pwd->{'count'} > $r ) {
-
-                # Remove extra old passwords
-                shift( @{ $pwd->{'old-passwords'} } )
-                  while ( $pwd->{'count'}-- > $r );
-                $pwd->{'count'} = $r;
-            }
-        }
-    }
-    update_opasswd_file($opwds);
     return;
 }
 
@@ -87,7 +59,8 @@ sub save_old_password {
         shift( @{ $opwds->{$user}->{'old-passwords'} } )
           if ( $opwds->{$user}->{'count'} >= $r );
         push( @{ $opwds->{$user}->{'old-passwords'} }, $pwd );
-        $opwds->{$user}->{'count'} += 1;
+        $opwds->{$user}->{'count'} += 1
+          if $opwds->{$user}->{'count'} < $r;
     }
     else {
         my %opwd = ( 'count' => 1, 'old-passwords' => [$pwd] );
