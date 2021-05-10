@@ -96,11 +96,11 @@ sub update_history {
 sub update_expiration {
     my $req     = shift;
 
-    my $m = -1;
+    my $m = 99999;
     if ( defined($req) ) {
         my %tree_in = %$req;
         $m = $tree_in{'requirements'}{'expiration'}{'maximum-days'};
-        $m = -1 if !defined($m);
+        $m = 99999 if !defined($m);
     }
 
     # Expiration on new user accounts
