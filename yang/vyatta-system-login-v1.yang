@@ -60,6 +60,9 @@ module vyatta-system-login-v1 {
 
 		 System login configuration";
 
+	revision 2021-05-12 {
+		description "Obsolete RADIUS configuration.";
+	}
 	revision 2021-01-18 {
 		description "Add new state node for date and time when
                  user's password expires.
@@ -96,7 +99,7 @@ module vyatta-system-login-v1 {
 	}
 	grouping radius-server-group {
 		list radius-server {
-			status deprecated;
+			status obsolete;
 			if-feature radius-system-user-login;
 			description "Radius server authentication";
 			configd:help "Radius server authentication";

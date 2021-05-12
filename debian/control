@@ -36,8 +36,6 @@ Architecture: all
 Depends:
  ${misc:Depends},
  vyatta-cfg-system,
- libpam-radius-auth,
- libvyatta-config-perl
 Breaks: vyatta-cfg-system (<< 2.20)
 Replaces: vyatta-cfg-system (<< 2.20)
 Section: contrib/net
