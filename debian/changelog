@@ -1,3 +1,14 @@
+vyatta-login (2.34) unstable; urgency=medium
+
+  * Unable to renew expired passwords
+  * Operator level users are unable to renew password
+  * Operator level users are unable to renew password
+  * User isolation ssh logins fail when renewing password
+  * Bug fixes in opasswd file
+  * Password history config changes default max password age
+
+ -- Sharmila Podury <sharmila.podury@att.com>  Fri, 14 May 2021 11:09:48 -0700
+
 vyatta-login (2.33) unstable; urgency=medium
 
   [ Sharmila Podury ]
