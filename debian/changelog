@@ -1,3 +1,9 @@
+vyatta-login (2.35) unstable; urgency=medium
+
+  * Replace pam_unix in common-password with custom PAM
+
+ -- Sharmila Podury <sharmila.podury@att.com>  Fri, 21 May 2021 17:46:14 -0700
+
 vyatta-login (2.34) unstable; urgency=medium
 
   * Unable to renew expired passwords
