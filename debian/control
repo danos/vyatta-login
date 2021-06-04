@@ -56,6 +56,8 @@ Depends:
  libtemplate-perl,
  libjson-perl,
  libvyatta-cfgclient-perl,
+ python3,
+ python3-vyatta-cfgclient,
  util-linux (>= 2.20.1-5),
  vyatta-debian-pam-configs-config,
  vyatta-debian-passwd-config,
@@ -98,3 +100,15 @@ Replaces: vyatta-op-show-system-v1-yang (<< 2.29)
 Depends: vyatta-login, ${misc:Depends}, ${yang:Depends}
 Description: vyatta-op-show-system-login-v1 module
  The YANG module for show system login operational commands
+
+Package: vyatta-system-login-history-v1-yang
+Architecture: all
+Depends: vyatta-login, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-login-history-v1 module
+ The YANG module for system login history configuration commands
+
+Package: vyatta-op-show-system-login-history-v1-yang
+Architecture: all
+Depends: vyatta-login, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-op-show-system-login-history-v1 module
+ The YANG module for show system login history operational commands

@@ -1,0 +1,178 @@
+module vyatta-system-login-history-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-system-login-history:1";
+	prefix vyatta-system-login-history-v1;
+
+	import ietf-yang-types {
+		prefix ietf;
+	}
+	import vyatta-system-v1 {
+		prefix system;
+	}
+	import vyatta-system-login-v1 {
+		prefix system-login;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	description
+		"Copyright (c) 2021 AT&T Intellectual Property
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or without
+		 modification, are permitted provided that the following conditions
+		 are met:
+
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 The YANG module for vyatta-system-login-history-v1.";
+
+	revision 2021-05-25 {
+		description "Initial revision of version 1.";
+	}
+
+	typedef interval {
+		description "Interval to archive login history.";
+
+		type enumeration {
+			enum daily {
+				description "Daily interval";
+			}
+			enum weekly {
+				description "Weekly interval";
+			}
+			enum monthly {
+				description "Monthly interval";
+			}
+			enum yearly {
+				description "Yearly interval";
+			}
+		}
+	}
+
+	augment /system:system/system-login:login {
+		container history {
+			description "System login history configuration";
+			configd:help "System login history configuration";
+			configd:end "vyatta-login-history config-history";
+
+			container archive {
+				description "Archive login history";
+				configd:help "Archive login history";
+
+				choice retention-policy {
+					default time-interval;
+					case time-interval {
+						leaf interval {
+							description
+								"Interval to archive login history.
+								daily  : Login history is archived daily
+								at 00:00 hours local time.
+								weekly : Login history is archived weekly
+								on Sunday at 00:00 hours local time.
+								monthly: Login history is archived monthly on first
+								day of the month at 00:00 hours local time.
+								yearly : Login history is archived yearly and when current
+								year is not the same as that of last time archived.";
+							configd:help "Interval to archive login history.";
+							type interval;
+							default "monthly";
+						}
+						leaf duration {
+							description
+								"Specifies the number of intervals to archive login history.
+								Older history is removed once the specified number of
+								intervals are reached. A value of 0 means do not archive
+								login history information. A value of -1 means do not remove
+								any old information, which can result in usage of large disk space.";
+							configd:help "Number of intervals to archive login history.";
+							type int16 {
+								range "-1..max";
+							}
+							default "1";
+						}
+					}
+					case count {
+						leaf record-count {
+							description
+								"Specifies the minimum number of records of
+								login history to be stored.";
+							configd:help "Minumum records of login history information.";
+							type uint16;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	rpc get-login-history {
+		description "Show system login history.";
+		configd:call-rpc 'vyatta-login-history get-history';
+		output {
+			list history {
+				key index;
+
+				leaf index {
+					description "Index to the user's login history.";
+					type uint32;
+				}
+				leaf user {
+					description "Username of the user.";
+					type string;
+				}
+				leaf tty {
+					description "Terminal name.";
+					type string;
+				}
+				leaf host {
+					description "Hostname for remote login or kernel version for run-level messages.";
+					type string;
+				}
+				leaf login-time {
+					description "User login time.";
+					type ietf:date-and-time;
+				}
+				leaf logout-time {
+					description "User logout time.";
+					type ietf:date-and-time;
+				}
+				leaf info {
+					description "Miscellaneous information about login history.";
+					type string;
+				}
+			}
+		}
+	}
+}

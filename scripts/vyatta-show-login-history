@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2021, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Script to output login history information.
+
+import sys
+
+from vyatta import configd
+from datetime import datetime
+
+
+def get_readable_time_format(iso_time):
+    '''
+    Convert ISO time format into readable format.
+    '''
+    dt = datetime.fromisoformat(iso_time.replace('Z', '+00:00'))
+    return dt.strftime('%a %b %d %Y %H:%M:%S %p')
+
+
+def show_login_history(history):
+    '''
+    Print login histoty to the CLI output.
+    '''
+    fmt = "{:<14} {:<14} {:<28} {:<30} {:<30} {:<24}"
+    print(fmt.
+          format('User', 'tty', 'Host',
+                 'Login time', 'Logout time', 'Info'))
+
+    print(fmt.
+          format('----', '---', '----',
+                 '----------', '-----------', '----'))
+    i = 0
+    while i < (len(history)):
+        login_time = get_readable_time_format(history[i]['login-time'])
+        if 'logout-time' in history[i]:
+            logout_time = get_readable_time_format(history[i]['logout-time'])
+        else:
+            logout_time = ""
+        print(fmt.
+               format(history[i]['user'],
+                      history[i]['tty'],
+                      history[i]['host'],
+                      login_time,
+                      logout_time,
+                      history[i]['info']))
+        i += 1
+
+
+def get_since_history(since_time, history):
+    '''
+    Get login history data since the specified time.
+    '''
+    since_history = []
+    for i in range(len(history)):
+        if since_time <= history[i]['login-time']:
+            since_history.append(history[i])
+
+    return since_history
+
+
+def get_until_history(until_time, history):
+    '''
+    Get login history data until the specified time.
+    '''
+    until_history = []
+    for i in range(len(history)):
+        if until_time >= history[i]['login-time']:
+            until_history.append(history[i])
+
+    return until_history
+
+
+if __name__ == "__main__":
+    c = configd.Client()
+
+    try:
+        history = c.call_rpc_dict("vyatta-system-login-history-v1",
+                                  "get-login-history",
+                                  {})
+    except Exception as e:
+        print("Can't retrieve login history information: " + str(e) + "\n",
+              file=sys.stderr)
+        sys.exit(1)
+
+    history = sorted(history['history'],
+        key = lambda i: i['login-time'], reverse=True)
+
+    if sys.argv[1] == "--all":
+        show_login_history(history)
+    elif sys.argv[1] == "--count":
+        show_login_history(history[:int(sys.argv[2])])
+    elif sys.argv[1] == "--since":
+        since_time = sys.argv[2]
+        since_history = get_since_history(since_time, history)
+        if len(sys.argv) == 5:
+            until_time = sys.argv[4]
+            since_until_history = get_until_history(until_time, since_history)
+            show_login_history(since_until_history)
+        else:
+            show_login_history(since_history)
+    elif sys.argv[1] == "--until":
+        until_time = sys.argv[2]
+        until_history = get_until_history(until_time, history)
+        show_login_history(until_history)

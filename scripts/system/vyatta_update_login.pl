@@ -2,7 +2,7 @@
 
 # **** License ****
 #
-# Copyright (c) 2018-2020, AT&T Intellectual Property.
+# Copyright (c) 2018-2021, AT&T Intellectual Property.
 #    All Rights Reserved.
 #
 # Copyright (c) 2014-2016, Brocade Communications Systems, Inc.
@@ -128,6 +128,7 @@ sub update_auth_method {
        next if ($type eq 'max-sessions');
        next if ($type eq 'auto-disable');
        next if ($type eq 'user-isolation');
+       next if ($type eq 'history');
 
        # convert radius-server to RadiusServer
        my $kind = ucfirst $type;

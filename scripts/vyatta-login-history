@@ -1,0 +1,206 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2021, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Script to configure login history parameters and return
+# login history information of users.
+
+import sys
+import json
+import subprocess
+import syslog
+
+from datetime import datetime
+from vyatta import configd
+
+WTMP_CONF = '/etc/logrotate.d/wtmp'
+EACH_LOGIN_ENTRY_SIZE = 100
+DEFAULT_MINSIZE = '    minsize 1M\n'
+
+
+class Login_History:
+    '''
+    Login History. Contains a single login history entry
+    '''
+    _attrs = {
+        'idx': 'index',
+        'user': 'user',
+        'tty': 'tty',
+        'host': 'host',
+        'login_time': 'login-time',
+        'logout_time': 'logout-time',
+        'info': 'info'
+    }
+
+    def __init__(self, **kwargs):
+        self.idx = 0
+        [self.__setattr__(k, kwargs.get(k)) for k in self._attrs.keys()]
+
+    def json_dict(self):
+        return {self._attrs[k]: v for (k, v) in self.__dict__.items()
+            if v is not None}
+
+    def __str__(self):
+        return "Login-History({})".format(str(self.__dict__))
+
+    def __repr__(self):
+        return "Login-History({})".format(repr(self.__dict__))
+
+
+def get_iso_time(time):
+    '''
+    Return time is ISO time format.
+    '''
+    if time is not None:
+        return (datetime.fromtimestamp(datetime.strptime
+            (time, "%a %b %d %H:%M:%S %Y").timestamp()).isoformat("T") + "Z")
+
+
+def create_login_entry(login, idx):
+    '''
+    Creates the login entry with necessary fields.
+    '''
+    login = login.split()
+    if len(login) == 0:
+        return
+
+    # Populate necessary fields from login line
+    user = login[0]
+    if user != 'reboot':
+        login.insert(2, ' ')
+    tty = login[1] + ' ' + login[2]
+    host = login[3]
+    login_time = login[4] + ' ' + login[5] + ' ' + login[6] + \
+            ' ' + login[7] + ' ' + login[8]
+
+    if login[9] == 'still':
+        logout_time = None
+        info = login[9] + ' ' + login[10]
+    elif login[10] == 'crash':
+        logout_time = None
+        info = login[10] + ' ' + login[11]
+    else:
+        logout_time = login[10] + ' ' + login[11] + ' ' + login[12] + \
+                ' ' + login[13] + ' ' + login[14]
+        info = login[15]
+
+    login_time = get_iso_time(login_time)
+    logout_time = get_iso_time(logout_time)
+
+    fields = {'idx': idx,
+              'user': user,
+              'tty': tty,
+              'host': host,
+              'login_time': login_time,
+              'logout_time': logout_time,
+              'info': info,
+             }
+    s = Login_History(**fields)
+    return s
+
+
+def get_login_history():
+    '''
+    Gets login history record from the 'last' command.
+
+    Example of last command:
+    vyatta   pts/1        10.156.48.185    Tue Jun  1 08:38   still logged in
+    vyatta   pts/1        10.156.48.185    Tue Jun  1 08:29 - 08:37  (00:08)
+    vyatta   pts/0        10.156.48.185    Tue Jun  1 08:29   still logged in
+    '''
+    history = []
+    lines = []
+    count = 0
+
+    cmd = ['last', '-w', '-F']
+
+    try:
+        with open("/dev/null", "w") as ignore:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=ignore)
+    except Exception as e:
+        print("failed to fetch login history information: {}".format(e),
+              file=sys.stderr)
+        return {}
+
+    while(p.poll() is None):
+        line = p.stdout.readline().decode()
+        line = line.strip()
+        if len(line) > 0:
+            lines.append(line)
+
+    for line in lines:
+        if 'wtmp' not in line and line != '\n':
+            count = count + 1
+            login = create_login_entry(line, count)
+
+        if login is not None:
+            history.append(login)
+
+    return history
+
+
+def update_login_history(conf):
+    '''
+    Update wtmp conf file with configured parameters.
+    '''
+    with open(WTMP_CONF, 'r') as file:
+        data = file.readlines()
+
+
+    if 'archive' not in conf:
+        syslog.syslog(syslog.LOG_ERR, "archive node not found in login history")
+        return
+
+    if 'record-count' in conf['archive']:
+        data[5] = "    size " + \
+            str(EACH_LOGIN_ENTRY_SIZE * conf['archive']['record-count']) + '\n'
+    else:
+        data[3] = "    " + conf['archive']['interval'] + '\n'
+        data[5] = DEFAULT_MINSIZE
+        data[6] = "    rotate " + str(conf['archive']['duration']) + '\n'
+
+    with open(WTMP_CONF, 'w') as file:
+        file.writelines(data)
+
+
+def configure_login_history():
+    '''
+    Get the archive info from configured tree and configure archive
+    parameters.
+    '''
+    cfg = None
+    try:
+        CONFIG_STRING = 'system login history'
+        client = configd.Client()
+        cfg = client.tree_get_dict(CONFIG_STRING)
+    except configd.Exception:
+        pass
+    except Exception as e:
+        print("Failed to get tree on '{}': '{}'".format(CONFIG_STRING, e),
+              file=sys.stderr)
+        sys.exit(1)
+
+    if not cfg:
+        sys.exit(0)
+
+    try:
+        history = cfg['history']
+        update_login_history(history)
+    except KeyError:
+        pass
+    except Exception as e:
+        print("Failed to configure login history: '{}'".format(e),
+              file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "config-history":
+        configure_login_history()
+    elif sys.argv[1] == "get-history":
+        jout = [v.json_dict() for v in get_login_history()]
+        print(json.dumps({'history': (jout)}))
+
+    exit(0)
