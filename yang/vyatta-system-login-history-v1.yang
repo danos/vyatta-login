@@ -57,7 +57,7 @@ module vyatta-system-login-history-v1 {
 
 		 The YANG module for vyatta-system-login-history-v1.";
 
-	revision 2021-05-25 {
+	revision 2021-06-17 {
 		description "Initial revision of version 1.";
 	}
 
@@ -67,15 +67,19 @@ module vyatta-system-login-history-v1 {
 		type enumeration {
 			enum daily {
 				description "Daily interval";
+				configd:help "Daily interval";
 			}
 			enum weekly {
 				description "Weekly interval";
+				configd:help "Weekly interval";
 			}
 			enum monthly {
 				description "Monthly interval";
+				configd:help "Monthly interval";
 			}
 			enum yearly {
 				description "Yearly interval";
+				configd:help "Yearly interval";
 			}
 		}
 	}
