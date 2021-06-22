@@ -75,12 +75,19 @@ def create_login_entry(login, idx):
     login_time = login[4] + ' ' + login[5] + ' ' + login[6] + \
             ' ' + login[7] + ' ' + login[8]
 
-    if login[9] == 'still':
+    # gone - no logout
+    if login[8] == 'gone':
+        logout_time = None
+        info = login[8] + ' ' + login[9] + ' ' + login[10] + ' ' + login[11]
+    # still running or still logged
+    elif login[9] == 'still':
         logout_time = None
         info = login[9] + ' ' + login[10]
+    # crash
     elif login[10] == 'crash':
         logout_time = None
         info = login[10] + ' ' + login[11]
+    # Everything else with valid logout times
     else:
         logout_time = login[10] + ' ' + login[11] + ' ' + login[12] + \
                 ' ' + login[13] + ' ' + login[14]
