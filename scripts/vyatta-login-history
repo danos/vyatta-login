@@ -142,8 +142,8 @@ def get_login_history():
             count = count + 1
             login = create_login_entry(line, count)
 
-        if login is not None:
-            history.append(login)
+            if login is not None:
+                history.append(login)
 
     return history
 
