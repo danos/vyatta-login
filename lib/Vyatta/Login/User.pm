@@ -9,7 +9,7 @@
 # Portions created by Vyatta are Copyright (C) 2007 Vyatta, Inc.
 # All Rights Reserved.
 #
-# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-License-Identifier: LGPL-2.1-only
 #
 # **** End License ****
 
