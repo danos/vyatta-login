@@ -17,7 +17,7 @@ from vyatta import configd
 
 WTMP_CONF = '/etc/logrotate.d/wtmp'
 EACH_LOGIN_ENTRY_SIZE = 100
-DEFAULT_MINSIZE = '    minsize 1M\n'
+DEFAULT_MINSIZE = '    minsize 1\n'
 
 
 class Login_History:
