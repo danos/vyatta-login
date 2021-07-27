@@ -45,6 +45,8 @@ use POSIX qw(strftime);
 use IPC::Run3;
 use Time::Local;
 
+my @LAST_CMD = ( '/usr/bin/last', '-R', '--time-format', 'iso' );
+
 use constant {
     VYATTA => 0x1,
     OTHER  => 0x2,
@@ -102,34 +104,29 @@ sub get_password_expiry {
     return $edate;
 }
 
+sub get_lastlogin_time {
+    my ($user) = @_;
+
+    my @lines;
+    run3( \@LAST_CMD, undef, \@lines );
+    foreach my $line (@lines) {
+        chomp($line);
+        if ( $line =~ /^$user/ ) {
+            my @info = split( /\s+/, $line );
+            if ( $info[0] eq $user ) {
+                return $info[2];
+            }
+        }
+    }
+    return ( "never logged in" );
+}
+
 sub get_state {
 
     # Read list of Vyatta users
     my $client = Vyatta::Configd::Client->new();
     my $tree   = $client->tree_get_full_hash("system login user");
     my %vuser  = map { $_->{'tagnode'} => 1 } @{ $tree->{'user'} };
-
-    # Setup to access lastlog
-    open( my $lastlog, '<', "/var/log/lastlog" )
-      or die "can't open /var/log/lastlog:$!";
-
-    # Magic values based on binary format of last log
-    # See /usr/include/bits/utm.h
-    my $typedef = 'L Z32 Z256';
-    my $reclen  = length( pack($typedef) );
-
-    my $lastlogin = sub {
-        my $uid = shift;
-        sysseek( $lastlog, $uid * $reclen, SEEK_SET )
-          or die "seek failed: $!";
-        my ( $rec, $line, $host, $time );
-        if ( sysread( $lastlog, $rec, $reclen ) == $reclen ) {
-            my ( $time, $line, $host ) = unpack( $typedef, $rec );
-            return scalar( to_iso8601($time) ), $line, $host
-              if ( $time != 0 );
-        }
-        return ( "never logged in", "", "" );
-    };
 
     # Walk password file
     # Note: this only works as root
@@ -141,12 +138,11 @@ sub get_state {
         if ( $l == 1 ) {
             $type = 'locked';
         }
-        my ( $time, $line, $host ) = $lastlogin->($uid);
+        my $time = get_lastlogin_time($u);;
 
         $users{$u} = [ $u, $type, $time ];
     }
     endpwent();
-    close $lastlog;
 
     # Check tally counter
     #
