@@ -1,3 +1,20 @@
+vyatta-login (2.36) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * Add support to view history/login data. VRVDR-52326
+  * Add help text for the missing login history archive interval options. VRVDR-55421
+  * Fix script index error when fetching login history in case user goes away without logout. VRVDR-55465
+  * Address unbound error when login history count is 0. VRVDR-55410
+
+  [ Charles (Chas) Williams ]
+  * Mark RADIUS configuration as obselete (Bugfix: VRVDR-54148)
+
+  [ Sharmila Podury ]
+  * Perl library licensing incorrect
+  * Show commands 'Last login' date missing in user isolation
+
+ -- Sharmila Podury <sharmila.podury@att.com>  Wed, 28 Jul 2021 06:31:51 -0700
+
 vyatta-login (2.35) unstable; urgency=medium
 
   * Replace pam_unix in common-password with custom PAM
