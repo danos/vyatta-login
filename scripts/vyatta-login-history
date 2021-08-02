@@ -18,6 +18,7 @@ from vyatta import configd
 WTMP_CONF = '/etc/logrotate.d/wtmp'
 EACH_LOGIN_ENTRY_SIZE = 100
 DEFAULT_MINSIZE = '    minsize 1\n'
+DEFAULT_PERM = '    create 0660 root utmp\n'
 
 
 class Login_History:
@@ -167,6 +168,8 @@ def update_login_history(conf):
         data[3] = "    " + conf['archive']['interval'] + '\n'
         data[5] = DEFAULT_MINSIZE
         data[6] = "    rotate " + str(conf['archive']['duration']) + '\n'
+
+    data[4] = DEFAULT_PERM
 
     with open(WTMP_CONF, 'w') as file:
         file.writelines(data)
