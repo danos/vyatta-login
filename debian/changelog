@@ -1,3 +1,11 @@
+vyatta-login (2.37) unstable; urgency=medium
+
+  [ Sameer Agrawal ]
+  * Reduce the minsize so that login history archive files are created even for one or smaller number of login history. VRVDR-55493
+  * Fix permissions so that login history is not exposed at operator level. VRVDR-55441
+
+ -- Sharmila Podury <sharmila.podury@att.com>  Tue, 31 Aug 2021 10:03:03 -0700
+
 vyatta-login (2.36) unstable; urgency=medium
 
   [ Sameer Agrawal ]
