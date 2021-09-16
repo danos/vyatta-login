@@ -6,6 +6,9 @@ MY_CFLAGS	+= -Wall -Wextra -Werror
 
 CFLAGS += $(MY_CFLAGS)
 
+LDLIBS  += -lvyatta-util
+LDLIBS  += -lvyatta-config
+
 LDFLAGS	+= -shared
 SRC	:= $(SRCDIR)/pam_vyatta_passwd.c
 OBJ	:= $(SRCDIR)/pam_vyatta_passwd.o

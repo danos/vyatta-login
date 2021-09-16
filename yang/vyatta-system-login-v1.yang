@@ -60,6 +60,9 @@ module vyatta-system-login-v1 {
 
 		 System login configuration";
 
+	revision 2021-09-12 {
+		description "RPC for password renewal.";
+	}
 	revision 2021-05-12 {
 		description "Obsolete RADIUS configuration.";
 	}
@@ -346,5 +349,39 @@ module vyatta-system-login-v1 {
 				}
 			}
 		}
+	}
+
+	rpc verify-password {
+		description "Verify current password for user";
+		input {
+			leaf current-password {
+				description "Current password in plaintext";
+				mandatory true;
+				type string {
+					length 1..max;
+				}
+			}
+		}
+		configd:call-rpc "vyatta-password-rpc verify-password";
+	}
+	rpc change-password {
+		description "Change password for user";
+		input {
+			leaf current-password {
+				description "Current password in plaintext";
+				mandatory true;
+				type string {
+					length 1..max;
+				}
+			}
+			leaf new-password {
+				description "New password in plaintext";
+				mandatory true;
+				type string {
+					length 1..max;
+				}
+			}
+		}
+		configd:call-rpc "vyatta-password-rpc change-password";
 	}
 }
