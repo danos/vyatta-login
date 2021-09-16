@@ -1,1 +1,0 @@
-vyatta-login: unusual-interpreter opt/vyatta/sbin/vyatta-update-password #!/bin/vcli
