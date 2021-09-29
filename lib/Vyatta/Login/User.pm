@@ -17,7 +17,7 @@ package Vyatta::Login::User;
 use strict;
 use warnings;
 use lib "/opt/vyatta/share/perl5";
-use Vyatta::Login::Password qw( save_old_password delete_user_from_opwdfile );
+use Vyatta::Login::Password qw( save_old_password delete_user_from_opwdfile update_password_expiry );
 use JSON;
 use IPC::Run3;
 
@@ -152,7 +152,7 @@ sub _delete_user {
 }
 
 sub _update_user {
-    my ( $user, $tree, $hist ) = (@_);
+    my ( $user, $tree, $hist, $exp ) = (@_);
     die "Missing input: user"   unless defined $user;
     die "Missing input: config" unless defined $tree;
 
@@ -229,6 +229,7 @@ sub _update_user {
     if ( $result and $result ne "") {
         die "Attempt to change user $user failed: $result\n";
     }
+    update_password_expiry( $user, $pwd, $exp ) if defined($exp);
     save_old_password( $user, $pwd, $hist ) if ( $pwd && defined($hist) );
     return;
 }
@@ -278,9 +279,14 @@ sub update {
         &ADD_OR_CHANGE => $Vyatta::Configd::Client::CANDIDATE
     );
     my $hdb  = $Vyatta::Configd::Client::AUTO;
-    my $hist = $config->tree_get_hash("system password requirements history")
+    my $hist;
+    my $exp;
+    $hist = $config->tree_get_hash("system password requirements history")
       if (
         $config->node_exists( $hdb, "system password requirements history" ) );
+    $exp = $config->tree_get_hash("system password requirements expiration")
+      if (
+        $config->node_exists( $hdb, "system password requirements expiration" ) );
     my %users;
     foreach my $action ( keys(%db) ) {
         next unless $config->node_exists( $db{$action}, "system login user" );
@@ -299,7 +305,7 @@ sub update {
             } elsif ( $action == ADD_OR_CHANGE
                 && ( $state == $ADDED || $state == $CHANGED ) )
             {
-                _update_user( $user, $uconfig, $hist );
+                _update_user( $user, $uconfig, $hist, $exp );
                 _authorized_keys($user);
             }
         }

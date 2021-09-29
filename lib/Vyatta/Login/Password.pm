@@ -20,9 +20,10 @@ use File::Temp qw/ tempfile  tempdir /;
 use File::Slurp qw(read_file);
 use Template;
 use JSON;
+use IPC::Run3;
 
 our @EXPORT =
-  qw(update_opasswd_file save_old_password delete_user_from_opwdfile is_old_password $opwdDir $opwdFile);
+  qw(update_opasswd_file save_old_password delete_user_from_opwdfile is_old_password update_password_expiry $opwdDir $opwdFile);
 
 our $opwdDir  = "/etc/vyatta/login";
 our $opwdFile = "$opwdDir/opasswd.vyatta.json";
@@ -41,6 +42,23 @@ sub update_opasswd_file {
     print $fh encode_json($opwds);
     close($fh);
     rename( $filename, $opwdFile );
+    return;
+}
+
+sub update_password_expiry {
+    my ( $user, $pwd, $exp ) = @_;
+    return unless ( defined($user) && defined($exp) );
+
+    my $m = $exp->{'expiration'}->{'maximum-days'};
+    return if !defined($m);
+
+    my @cmd;
+    if ($pwd) {
+        @cmd = ( 'chage', '-M', $m, $user );
+    } else {
+        @cmd = ( 'chage', '-M', '99999', $user );
+    }
+    run3( \@cmd, \undef, undef, undef );
     return;
 }
 

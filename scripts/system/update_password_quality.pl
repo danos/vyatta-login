@@ -82,6 +82,7 @@ sub update_history {
             my $users = get_login_users();
             foreach my $user ( @{ $users->{'user'} } ) {
                 my $pwd = $user->{'authentication'}->{'encrypted-password'};
+                next unless ($pwd);
                 my %opwd = ( 'count' => 1, 'old-passwords' => [$pwd] );
                 $opwds->{$user->{'tagnode'}} = \%opwd;
             }
@@ -113,6 +114,8 @@ sub update_expiration {
     # Update expiration for existing user accounts
     my $users = get_login_users();
     foreach my $user ( @{ $users->{'user'} } ) {
+        my $pwd = $user->{'authentication'}->{'encrypted-password'};
+        $m = 99999 unless ($pwd);
         my @cmd = ( 'chage', '-M', $m, $user->{'tagnode'} );
         run3( \@cmd, \undef, undef, undef );
     }
