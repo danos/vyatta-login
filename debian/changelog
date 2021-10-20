@@ -1,3 +1,9 @@
+vyatta-login (2.39) unstable; urgency=medium
+
+  * Remove vyattapwdcfg group
+
+ -- Sharmila Podury <sharmila.podury@att.com>  Wed, 20 Oct 2021 10:06:12 -0700
+
 vyatta-login (2.38) unstable; urgency=medium
 
   * Remove unneeded lintian-overrides
